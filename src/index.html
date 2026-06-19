@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metadata Analyzer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f7fa;
+  color: #1a1a2e;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.container {
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+}
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  padding: 48px 40px;
+  text-align: center;
+}
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: #64748b; font-size: 14px; margin-bottom: 36px; }
+
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 48px 24px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 16px;
+}
+.dropzone:hover, .dropzone.drag-over {
+  border-color: #4a90d9;
+  background: #f0f6ff;
+}
+.dropzone-icon { font-size: 48px; margin-bottom: 12px; }
+.dropzone-text { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.dropzone-hint { font-size: 13px; color: #94a3b8; }
+.or-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0; color: #94a3b8; font-size: 13px;
+}
+.or-divider::before, .or-divider::after {
+  content: ''; flex: 1; height: 1px; background: #e2e8f0;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 24px; border-radius: 8px; font-size: 14px;
+  font-weight: 500; cursor: pointer; border: none;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: #4a90d9; color: #fff; }
+.btn-primary:hover { background: #3a7bc8; }
+.btn-secondary { background: #f1f5f9; color: #334155; }
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-success { background: #2e7d32; color: #fff; }
+.btn-success:hover { background: #256b28; }
+.btn-danger { background: #c62828; color: #fff; }
+.btn-danger:hover { background: #b11f1f; }
+.file-count {
+  margin-top: 12px; font-size: 13px; color: #64748b;
+}
+
+.progress-container { margin: 32px 0; }
+.progress-bar-bg {
+  width: 100%; height: 8px; background: #e2e8f0;
+  border-radius: 4px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: #4a90d9; border-radius: 4px;
+  transition: width 0.2s; width: 0%;
+}
+.progress-text {
+  margin-top: 8px; font-size: 14px; color: #64748b;
+}
+
+.summary { margin-bottom: 32px; }
+.summary-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 24px;
+}
+.summary-item {
+  background: #f8fafc; border-radius: 10px; padding: 20px;
+  text-align: center;
+}
+.summary-number { font-size: 36px; font-weight: 700; }
+.summary-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+.summary-number.ok { color: #2e7d32; }
+.summary-number.error { color: #c62828; }
+
+.export-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.hidden { display: none !important; }
+#file-input { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Screen 1: Upload -->
+  <div id="screen-upload" class="card">
+    <h1>Metadata Analyzer</h1>
+    <p class="subtitle">Analizá la metadata de tus archivos PDF</p>
+
+    <div id="dropzone" class="dropzone">
+      <div class="dropzone-icon">&#128196;</div>
+      <div class="dropzone-text">Arrastrá una carpeta aquí</div>
+      <div class="dropzone-hint">o usá el botón de abajo para seleccionar</div>
+    </div>
+
+    <div class="or-divider">o</div>
+
+    <button id="btn-select" class="btn btn-primary">
+      &#128193; Seleccionar carpeta
+    </button>
+    <input type="file" id="file-input" webkitdirectory directory multiple>
+
+    <div id="file-count" class="file-count hidden"></div>
+
+    <div style="margin-top: 20px;">
+      <button id="btn-start" class="btn btn-success hidden">
+        &#9654; Iniciar análisis
+      </button>
+    </div>
+  </div>
+
+  <!-- Screen 2: Processing -->
+  <div id="screen-processing" class="card hidden">
+    <h1>Analizando...</h1>
+    <p class="subtitle" id="processing-file">Preparando archivos...</p>
+
+    <div class="progress-container">
+      <div class="progress-bar-bg">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+      <div class="progress-text" id="progress-text">0 / 0</div>
+    </div>
+
+    <button id="btn-cancel" class="btn btn-danger">
+      &#10005; Cancelar
+    </button>
+  </div>
+
+  <!-- Screen 3: Results -->
+  <div id="screen-results" class="card hidden">
+    <h1>Análisis completado</h1>
+    <p class="subtitle">Resultados del análisis de metadata</p>
+
+    <div class="summary">
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-number" id="total-count">0</div>
+          <div class="summary-label">PDFs procesados</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-number ok" id="ok-count">0</div>
+          <div class="summary-label">OK</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-number error" id="error-count">0</div>
+          <div class="summary-label">Con errores</div>
+        </div>
+        <div class="summary-item" id="partial-item" style="display:none">
+          <div class="summary-number" style="color:#e65100" id="partial-count">0</div>
+          <div class="summary-label">Pendientes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="export-buttons">
+      <button id="btn-csv" class="btn btn-primary">&#128196; Exportar CSV</button>
+      <button id="btn-xlsx" class="btn btn-primary">&#128200; Exportar Excel</button>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <button id="btn-new" class="btn btn-secondary">
+        &#128260; Nuevo análisis
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '';
+
+let selectedFiles = [];
+let currentResults = [];
+let abortController = null;
+
+const screenUpload = document.getElementById('screen-upload');
+const screenProcessing = document.getElementById('screen-processing');
+const screenResults = document.getElementById('screen-results');
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const fileCountDiv = document.getElementById('file-count');
+const btnStart = document.getElementById('btn-start');
+const btnSelect = document.getElementById('btn-select');
+const btnCancel = document.getElementById('btn-cancel');
+const btnCsv = document.getElementById('btn-csv');
+const btnXlsx = document.getElementById('btn-xlsx');
+const btnNew = document.getElementById('btn-new');
+
+function showScreen(screen) {
+  [screenUpload, screenProcessing, screenResults].forEach(s => s.classList.add('hidden'));
+  screen.classList.remove('hidden');
+}
+
+function handleFiles(files) {
+  selectedFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+  if (selectedFiles.length === 0) {
+    fileCountDiv.classList.add('hidden');
+    btnStart.classList.add('hidden');
+    alert('No se encontraron archivos PDF en la carpeta seleccionada.');
+    return;
+  }
+  fileCountDiv.textContent = selectedFiles.length + ' PDFs encontrados';
+  fileCountDiv.classList.remove('hidden');
+  btnStart.classList.remove('hidden');
+}
+
+dropzone.addEventListener('click', () => fileInput.click());
+btnSelect.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('drag-over');
+});
+
+dropzone.addEventListener('dragleave', () => {
+  dropzone.classList.remove('drag-over');
+});
+
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  const items = e.dataTransfer.items;
+  if (!items) return;
+  const files = [];
+  function traverse(entry, path) {
+    return new Promise(resolve => {
+      if (entry.isFile) {
+        entry.file(file => {
+          file.relativePath = path + file.name;
+          files.push(file);
+          resolve();
+        });
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        reader.readEntries(entries => {
+          Promise.all(entries.map(e => traverse(e, path + entry.name + '/'))).then(resolve);
+        });
+      } else {
+        resolve();
+      }
+    });
+  }
+  const promises = [];
+  for (let i = 0; i < items.length; i++) {
+    const entry = items[i].webkitGetAsEntry();
+    if (entry) promises.push(traverse(entry, ''));
+  }
+  Promise.all(promises).then(() => handleFiles(files));
+});
+
+fileInput.addEventListener('change', () => {
+  handleFiles(fileInput.files);
+});
+
+btnStart.addEventListener('click', startAnalysis);
+btnCancel.addEventListener('click', cancelAnalysis);
+btnNew.addEventListener('click', () => {
+  currentResults = [];
+  selectedFiles = [];
+  fileInput.value = '';
+  fileCountDiv.classList.add('hidden');
+  btnStart.classList.add('hidden');
+  showScreen(screenUpload);
+});
+
+async function startAnalysis() {
+  if (selectedFiles.length === 0) return;
+  showScreen(screenProcessing);
+
+  const formData = new FormData();
+  for (const file of selectedFiles) {
+    formData.append(file.relativePath || file.name, file, file.relativePath || file.name);
+  }
+
+  abortController = new AbortController();
+  const total = selectedFiles.length;
+
+  document.getElementById('progress-text').textContent = '0 / ' + total;
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('processing-file').textContent = 'Enviando archivos...';
+
+  try {
+    const response = await fetch(API + '/api/analyze', {
+      method: 'POST',
+      body: formData,
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      alert('Error: ' + err);
+      showScreen(screenUpload);
+      return;
+    }
+
+    document.getElementById('processing-file').textContent = 'Procesando...';
+
+    const results = await response.json();
+    currentResults = results;
+
+    const okCount = results.filter(r => r.status === 'ok').length;
+    const errorCount = results.filter(r => r.status === 'error').length;
+
+    document.getElementById('total-count').textContent = results.length;
+    document.getElementById('ok-count').textContent = okCount;
+    document.getElementById('error-count').textContent = errorCount;
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-text').textContent = total + ' / ' + total;
+    document.getElementById('partial-item').style.display = 'none';
+
+    showScreen(screenResults);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      alert('Error de conexión: ' + err.message);
+      showScreen(screenUpload);
+    }
+  } finally {
+    abortController = null;
+  }
+}
+
+function cancelAnalysis() {
+  if (abortController) {
+    abortController.abort();
+    abortController = null;
+  }
+  if (currentResults.length > 0) {
+    showResults(currentResults, true);
+  } else {
+    showScreen(screenUpload);
+  }
+}
+
+function showResults(results, isPartial) {
+  const okCount = results.filter(r => r.status === 'ok').length;
+  const errorCount = results.filter(r => r.status === 'error').length;
+
+  document.getElementById('total-count').textContent = results.length;
+  document.getElementById('ok-count').textContent = okCount;
+  document.getElementById('error-count').textContent = errorCount;
+
+  if (isPartial && selectedFiles.length > results.length) {
+    document.getElementById('partial-item').style.display = '';
+    document.getElementById('partial-count').textContent = selectedFiles.length - results.length;
+  } else {
+    document.getElementById('partial-item').style.display = 'none';
+  }
+
+  showScreen(screenResults);
+}
+
+btnCsv.addEventListener('click', async () => {
+  try {
+    const response = await fetch(API + '/api/export/csv');
+    if (!response.ok) throw new Error('Error generando CSV');
+    const blob = await response.blob();
+    downloadBlob(blob, 'resultados.csv');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+});
+
+btnXlsx.addEventListener('click', async () => {
+  try {
+    const response = await fetch(API + '/api/export/xlsx');
+    if (!response.ok) throw new Error('Error generando Excel');
+    const blob = await response.blob();
+    downloadBlob(blob, 'resultados.xlsx');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+});
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

@@ -42,7 +42,7 @@ async fn main() {
     let addr = listener.local_addr().unwrap();
     let url = format!("http://{}", addr);
 
-    println!("Metadata Analyzer iniciado en {}", url);
+    println!("Huellas iniciado en {}", url);
 
     let _ = webbrowser::open(&url);
 

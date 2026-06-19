@@ -1,4 +1,6 @@
-# Metadata Analyzer
+![Huellas](huellas.jpg)
+
+# Huellas
 
 Herramienta de escritorio para extraer, validar y reportar la metadata de archivos PDF. Asegura la trazabilidad e integridad de documentos mediante análisis automático.
 
@@ -19,10 +21,10 @@ Descargá el binario para tu sistema operativo desde [Releases](https://github.c
 
 | SO | Archivo |
 |---|---|
-| Linux | `metadata-analyzer-linux-x86_64` |
-| Windows | `metadata-analyzer-windows-x86_64.exe` |
-| macOS Intel | `metadata-analyzer-macos-x86_64` |
-| macOS Apple Silicon | `metadata-analyzer-macos-aarch64` |
+| Linux | `huellas-linux-x86_64` |
+| Windows | `huellas-windows-x86_64.exe` |
+| macOS Intel | `huellas-macos-x86_64` |
+| macOS Apple Silicon | `huellas-macos-aarch64` |
 
 Doble clic en el archivo y la herramienta se abre en tu navegador. Sin instalación.
 
@@ -36,11 +38,11 @@ cd metadata
 cargo build --release
 ```
 
-El binario se genera en `target/release/metadata-analyzer`.
+El binario se genera en `target/release/huellas`.
 
 ## Uso
 
-1. Ejecutá `metadata-analyzer` (doble clic o desde terminal)
+1. Ejecutá `huellas` (doble clic o desde terminal)
 2. Arrastrá una carpeta con PDFs a la zona de drop, o usá el botón "Seleccionar carpeta"
 3. La herramienta escanea recursivamente todos los PDFs
 4. Al finalizar, ves un resumen con la cantidad de archivos OK y con errores

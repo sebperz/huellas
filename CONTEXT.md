@@ -1,4 +1,4 @@
-# Metadata Analyzer
+# Huellas
 
 Herramienta para extraer, validar y reportar metadata de archivos PDF, asegurando su trazabilidad e integridad.
 
